@@ -1,6 +1,9 @@
 use std::fmt;
 
 use nid::{self, Nid};
+use asn1::{Asn1Object,Asn1BitString,Asn1OctetString};
+use stack::Stack;
+use super::{GeneralName};
 
 /// Type-only version of the `Extension` enum.
 ///
@@ -218,4 +221,23 @@ impl fmt::Display for AltNameOption {
             &AltNameOption::RegisteredID => "RID",
         })
     }
+}
+
+type_!(BasicConstraints, BasicConstraintsRef,  ::ffi::BASIC_CONSTRAINTS, ::ffi::BASIC_CONSTRAINTS_free);
+type_!(ProxyPolicy, ProxyPolicyRef, ::ffi::PROXY_POLICY, ::ffi::PROXY_POLICY_free);
+type_!(ProxyCertInfoExtension, ProxyCertInfoExtensionRef, ::ffi::PROXY_CERT_INFO_EXTENSION, ::ffi::PROXY_CERT_INFO_EXTENSION_free);
+
+enum X509ExtensionInternalData {
+    BasicConstraints(BasicConstraints),
+    ProxyCertInfo(ProxyCertInfoExtension),
+    KeyUsage(Asn1BitString),
+    ExtendedKeyUsage(Stack<Asn1Object>),
+    NetscapeCertTyoe(Asn1BitString),
+    SubjectKeyIdentifier(Asn1OctetString), //skid
+    //AuthorityKeyIdentifier(AuthorityKeyId), //akid
+    SubjectAltName(Stack<GeneralName>), //altname
+    //NameConstraints(NameConstraints), //nc
+    //SbgpIpAddrBlock(Stack<IpAddressFamily>), //rfc3779_addr
+    //SbgpAutonomousSysNum(AsIdentifiers), //rfc3779_asid
+    FreshestCtl
 }

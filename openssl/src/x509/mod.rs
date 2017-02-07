@@ -11,7 +11,7 @@ use std::slice;
 use std::str;
 
 use {cvt, cvt_p};
-use asn1::{Asn1StringRef, Asn1Time, Asn1TimeRef};
+use asn1::{Asn1StringRef, Asn1Time, Asn1TimeRef, Asn1ObjectRef, Asn1OctetStringRef};
 use bio::MemBioSlice;
 use hash::MessageDigest;
 use pkey::{PKey, PKeyRef};
@@ -626,6 +626,83 @@ impl X509ReqRef {
             cvt(ffi::X509_REQ_set_subject_name(self.as_ptr(), value.as_ptr())).map(|_| ())
         }
     }
+
+    pub fn get_extensions(&self) -> Stack<X509Extension>
+    {
+        unsafe {
+            Stack::from_ptr(ffi::X509_REQ_get_extensions(self.as_ptr()))
+        }
+    }
+
+    pub fn add_extension(&mut self, exts: &StackRef<X509Extension>) -> Result<(), ErrorStack>
+    {
+        unsafe {
+            cvt(ffi::X509_REQ_add_extensions(self.as_ptr(), exts.as_ptr() as *mut _)).map(|_| ())
+        }
+    }
+}
+
+type_!(X509Extension, X509ExtensionRef, ffi::X509_EXTENSION, ffi::X509_EXTENSION_free);
+
+impl X509Extension
+{
+
+}
+
+impl X509ExtensionRef
+{
+    pub fn critical(&self) -> bool
+    {
+        unsafe {
+            ffi::X509_EXTENSION_get_critical(self.as_ptr()) != 0
+        }
+    }
+
+    pub fn set_critical(&self, value: bool) -> Result<(), ErrorStack>
+    {
+        unsafe {
+            cvt(ffi::X509_EXTENSION_set_critical(self.as_ptr(), if value { 1 as c_int } else { 0 as c_int })).map(|_| ())
+        }
+    }
+
+    pub fn object(&self) -> &Asn1ObjectRef
+    {
+        unsafe {
+            Asn1ObjectRef::from_ptr(ffi::X509_EXTENSION_get_object(self.as_ptr()))
+        }
+    }
+
+    pub fn set_object(&mut self, obj: &Asn1ObjectRef) -> Result<(),ErrorStack>
+    {
+        unsafe {
+            cvt(ffi::X509_EXTENSION_set_object(self.as_ptr(), obj.as_ptr())).map(|_| ())
+        }
+    }
+
+    pub fn data(&self) -> &Asn1OctetStringRef
+    {
+        unsafe {
+            Asn1OctetStringRef::from_ptr(ffi::X509_EXTENSION_get_data(self.as_ptr()))
+        }
+    }
+
+    pub fn set_data(&mut self, value: &Asn1OctetStringRef) -> Result<(), ErrorStack>
+    {
+        unsafe {
+            cvt(ffi::X509_EXTENSION_set_data(self.as_ptr(), value.as_ptr())).map(|_| ())
+        }
+    }
+
+    pub fn get_internal_data(&self) -> *mut ::libc::c_void
+    {
+        unsafe {
+            ffi::X509V3_EXT_d2i(self.as_ptr())
+        }
+    }
+}
+
+impl Stackable for X509Extension {
+    type StackType = ffi::stack_st_X509_EXTENSION;
 }
 
 /// A collection of X.509 extensions.
@@ -850,5 +927,6 @@ mod compat {
     pub unsafe fn X509_REQ_get_subject_name(x: *mut ffi::X509_REQ) -> *mut ::ffi::X509_NAME
     {
         (*(*x).req_info).subject
+
     }
 }

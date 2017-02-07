@@ -25,9 +25,15 @@ pub use libressl::*;
 
 pub enum ASN1_INTEGER {}
 pub enum ASN1_GENERALIZEDTIME {}
+pub enum ASN1_OBJECT {}
+pub enum ASN1_OCTET_STRING {}
+pub enum ASN1_BIT_STRING {}
 pub enum ASN1_STRING {}
 pub enum ASN1_TIME {}
 pub enum ASN1_TYPE {}
+pub enum ASN1_ITEM {}
+pub enum ASN1_UTCTIME {}
+pub enum BIT_STRING_BITNAME {}
 pub enum BN_CTX {}
 pub enum BN_GENCB {}
 pub enum CONF {}
@@ -1381,6 +1387,28 @@ pub fn ERR_GET_REASON(l: c_ulong) -> c_int {
     (l & 0xFFF) as c_int
 }
 
+#[repr(C)]
+pub struct BASIC_CONSTRAINTS
+{
+    ca: c_int,
+    pathlen: *mut ASN1_INTEGER
+}
+
+#[repr(C)]
+pub struct PROXY_POLICY {
+    policyLanguage: *mut ASN1_OBJECT,
+    policy: *mut ASN1_OCTET_STRING
+}
+
+#[repr(C)]
+pub struct PROXY_CERT_INFO_EXTENSION
+{
+    pcPathLengthConstraint: *mut ASN1_INTEGER,
+    proxyPolicy: *mut PROXY_POLICY
+}
+
+
+
 extern {
     pub fn AES_set_encrypt_key(userKey: *const c_uchar, bits: c_int, key: *mut AES_KEY) -> c_int;
     pub fn AES_set_decrypt_key(userKey: *const c_uchar, bits: c_int, key: *mut AES_KEY) -> c_int;
@@ -1391,8 +1419,45 @@ extern {
     pub fn ASN1_GENERALIZEDTIME_free(tm: *mut ASN1_GENERALIZEDTIME);
     pub fn ASN1_GENERALIZEDTIME_print(b: *mut BIO, tm: *const ASN1_GENERALIZEDTIME) -> c_int;
     pub fn ASN1_STRING_type_new(ty: c_int) -> *mut ASN1_STRING;
+    pub fn ASN1_STRING_print(bp: *mut BIO, v: *const ASN1_STRING) -> c_int;
+    //pub fn ASN1_STRING_print_ex(out: *mut BIO, str: *mut ASN1_STRING, flags: c_ulong) -> c_int;
     pub fn ASN1_TIME_free(tm: *mut ASN1_TIME);
     pub fn ASN1_TIME_print(b: *mut BIO, tm: *const ASN1_TIME) -> c_int;
+    pub fn ASN1_OCTET_STRING_free(a: *mut ASN1_OCTET_STRING);
+    pub fn ASN1_OCTET_STRING_dup(a: *const ASN1_OCTET_STRING) -> *mut ASN1_OCTET_STRING;
+    pub fn ASN1_OCTET_STRING_cmp(a: *const ASN1_OCTET_STRING, b: *const ASN1_OCTET_STRING) -> c_int;
+    pub fn ASN1_OCTET_STRING_set(str: *mut ASN1_OCTET_STRING, data: *const c_uchar, len: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_free(bs: *mut ASN1_BIT_STRING);
+    pub fn ASN1_BIT_STRING_set(a: *mut ::ASN1_BIT_STRING, d: *mut c_uchar, length: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_set_bit(a: *mut ::ASN1_BIT_STRING, n: c_int, value: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_name_print(bio: *mut BIO, bs: *mut ASN1_BIT_STRING, tbl: *mut BIT_STRING_BITNAME, indent: c_int) -> c_int;
+
+
+    pub fn ASN1_item_i2d_bio(it: *const ASN1_ITEM, out: *mut BIO, x: *mut c_void) -> c_int;
+    pub fn ASN1_UTCTIME_print(a: *mut BIO, a: *const ASN1_UTCTIME) -> c_int;
+    pub fn ASN1_bn_print(dp: *mut BIO, number: *const c_char, num: *const BIGNUM, buf: *mut c_uchar, off: c_int) -> c_int;
+    pub fn ASN1_parse(dp: *mut BIO, pp: *const c_uchar, len: c_long, indent: c_int) -> c_int;
+    pub fn ASN1_parse_dump(dp: *mut BIO, pp: *const c_uchar, len: c_long, indent: c_int, dump: c_int) -> c_int;
+
+
+    pub fn ASN1_OBJECT_new() -> *mut ASN1_OBJECT;
+    pub fn ASN1_OBJECT_free(a: *mut ASN1_OBJECT);
+    /*pub fn i2d_ASN1_OBJECT(a: *mut ASN1_OBJECT, pp: *mut *mut c_uchar) -> c_int;
+    pub fn c2i_ASN1_OBJECT(a: *mut *mut ASN1_OBJECT, pp: *const *mut c_uchar, length: c_long) -> *mut ASN1_OBJECT;
+    pub fn d2i_ASN1_OBJECT(a: *mut *mut ASN1_OBJECT, pp: *const *mut c_uchar, length: c_long) -> *mut ASN1_OBJECT;*/
+    pub fn OBJ_dup(o: *const ASN1_OBJECT) -> *mut ASN1_OBJECT;
+    pub fn OBJ_nid2obj(n: c_int) -> *mut ASN1_OBJECT;
+    pub fn OBJ_nid2ln(n: c_int) -> *const c_char;
+    pub fn OBJ_nid2sn(n: c_int) -> *const c_char;
+    pub fn OBJ_obj2nid(o: *const ASN1_OBJECT) -> c_int;
+    pub fn OBJ_txt2obj(s: *const c_char, no_name: c_int) -> *mut ASN1_OBJECT;
+    pub fn OBJ_obj2txt(buf: *mut c_char, buf_len: c_int, a: *const ASN1_OBJECT, no_name: c_int) -> c_int;
+    pub fn OBJ_txt2nid(s: *const c_char) -> c_int;
+    pub fn OBJ_ln2nid(s: *const c_char) -> c_int;
+    pub fn OBJ_sn2nid(s: *const c_char) -> c_int;
+    pub fn OBJ_cmp(a: *const ASN1_OBJECT, b: *const ASN1_OBJECT) -> c_int;
+
+    pub fn ASN1_TYPE_free(a: *mut ASN1_TYPE);
 
     pub fn BIO_ctrl(b: *mut BIO, cmd: c_int, larg: c_long, parg: *mut c_void) -> c_long;
     pub fn BIO_free_all(b: *mut BIO);
@@ -1937,6 +2002,7 @@ extern {
     pub fn X509_REQ_sign(x: *mut X509_REQ, pkey: *mut EVP_PKEY, md: *const EVP_MD) -> c_int;
     pub fn X509_REQ_set_version(x: *mut X509_REQ, version: c_long) -> c_int;
     pub fn X509_REQ_set_subject_name(req: *mut X509_REQ, name: *mut ::X509_NAME) -> c_int;
+    pub fn X509_REQ_get_extensions(req: *mut X509_REQ) -> *mut stack_st_X509_EXTENSION;
 
 
     #[cfg(not(ossl101))]
@@ -2000,4 +2066,32 @@ extern {
     pub fn HMAC_Final(ctx: *mut HMAC_CTX,
                       md: *mut c_uchar,
                       len: *mut c_uint) -> c_int;
+
+    #[cfg(any(ossl101, ossl102, libressl))]
+    pub fn X509_EXTENSION_set_object(ex: *mut X509_EXTENSION, obj: *mut ASN1_OBJECT) -> c_int;
+    #[cfg(not(any(ossl101, ossl102, libressl)))]
+    pub fn X509_EXTENSION_set_object(ex: *mut X509_EXTENSION, obj: *const ASN1_OBJECT) -> c_int;
+    pub fn X509_EXTENSION_set_critical(ex: *mut X509_EXTENSION, crit: c_int) -> c_int;
+    pub fn X509_EXTENSION_set_data(ex: *mut X509_EXTENSION, data: *mut ASN1_OCTET_STRING) -> c_int;
+
+    pub fn X509_EXTENSION_create_by_NID(ex : *mut *mut X509_EXTENSION, nid: c_int, crit: c_int, data: *mut ASN1_OCTET_STRING) -> *mut X509_EXTENSION;
+    #[cfg(any(ossl101, ossl102, libressl))]
+    pub fn X509_EXTENSION_create_by_OBJ(ex: *mut *mut X509_EXTENSION, obj: *mut ASN1_OBJECT, crit: c_int, data: *mut ASN1_OCTET_STRING) -> *mut X509_EXTENSION;
+    #[cfg(not(any(ossl101, ossl102, libressl)))]
+    pub fn X509_EXTENSION_create_by_OBJ(ex: *mut *mut X509_EXTENSION, obj: *const ASN1_OBJECT, crit: c_int, data: *mut ASN1_OCTET_STRING) -> *mut X509_EXTENSION;
+
+    pub fn X509_EXTENSION_get_object(ex: *mut X509_EXTENSION) -> *mut ASN1_OBJECT;
+    #[cfg(any(ossl101, ossl102, libressl))]
+    pub fn X509_EXTENSION_get_critical(ex: *mut X509_EXTENSION) -> c_int;
+    #[cfg(not(any(ossl101, ossl102, libressl)))]
+    pub fn X509_EXTENSION_get_critical(ex: *const X509_EXTENSION) -> c_int;
+    pub fn X509_EXTENSION_get_data(ne: *mut X509_EXTENSION) -> *mut ASN1_OCTET_STRING;
+
+    pub fn X509V3_EXT_d2i(ext: *mut X509_EXTENSION) -> *mut c_void;
+    pub fn X509V3_EXT_i2d(ext_nid: c_int, crit: c_int, ext: *mut c_void) -> *mut X509_EXTENSION;
+
+    pub fn BASIC_CONSTRAINTS_free(tm: *mut BASIC_CONSTRAINTS);
+    pub fn PROXY_POLICY_free(pp: *mut PROXY_POLICY);
+    pub fn PROXY_CERT_INFO_EXTENSION_free(pci: *mut PROXY_CERT_INFO_EXTENSION);
 }
+

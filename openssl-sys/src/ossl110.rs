@@ -25,6 +25,7 @@ pub enum stack_st_X509_NAME {}
 pub enum stack_st_X509_ATTRIBUTE {}
 pub enum stack_st_X509_EXTENSION {}
 pub enum stack_st_SSL_CIPHER {}
+pub enum stack_st_GENERAL_SUBTREE {}
 pub enum X509 {}
 pub enum X509_VERIFY_PARAM {}
 pub enum X509_REQ {}
@@ -50,6 +51,21 @@ pub const CRYPTO_EX_INDEX_SSL: c_int = 0;
 pub const CRYPTO_EX_INDEX_SSL_CTX: c_int = 1;
 
 pub const X509_CHECK_FLAG_NEVER_CHECK_SUBJECT: c_uint = 0x20;
+
+#[repr(C)]
+pub struct GENERAL_SUBTREE
+{
+    base: *mut ::GENERAL_NAME,
+    minimum: *mut ::ASN1_INTEGER,
+    maximum: *mut ::ASN1_INTEGER
+}
+
+#[repr(C)]
+pub struct NAME_CONSTRAINTS
+{
+    permittedSubtrees: *mut stack_st_GENERAL_SUBTREE,
+    excludedSubtrees: *mut stack_st_GENERAL_SUBTREE
+}
 
 pub fn init() {}
 
@@ -194,4 +210,9 @@ extern {
                          keytype: c_int) -> *mut PKCS12;
     pub fn X509_REQ_get_version(req: *const X509_REQ) -> c_long;
     pub fn X509_REQ_get_subject_name(req: *const X509_REQ) -> *mut ::X509_NAME;
+
+    pub fn ASN1_BIT_STRING_get_bit(a: *const ::ASN1_BIT_STRING, n: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_check(a: *const ::ASN1_BIT_STRING, flags: *const c_uchar, flags_len: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_num_asc(name: *const c_char, tbl: *mut ::BIT_STRING_BITNAME) -> c_int;
+    pub fn ASN1_BIT_STRING_set_asc(bs: *mut ::ASN1_BIT_STRING, name: *const c_char, value: c_int, tbl: *mut ::BIT_STRING_BITNAME) -> c_int;
 }

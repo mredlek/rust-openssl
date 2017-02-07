@@ -51,6 +51,11 @@ pub struct stack_st_OPENSSL_STRING {
 }
 
 #[repr(C)]
+pub struct stack_st_GENERAL_SUBTREE {
+    pub stack: _STACK,
+}
+
+#[repr(C)]
 pub struct _STACK {
     pub num: c_int,
     pub data: *mut *mut c_char,
@@ -524,6 +529,21 @@ pub struct X509_VERIFY_PARAM {
     //pub id: *mut X509_VERIFY_PARAM_ID,
 }
 
+#[repr(C)]
+pub struct GENERAL_SUBTREE
+{
+    base: *mut ::GENERAL_NAME,
+    minimum: *mut ::ASN1_INTEGER,
+    maximum: *mut ::ASN1_INTEGER
+}
+
+#[repr(C)]
+pub struct NAME_CONSTRAINTS
+{
+    permittedSubtrees: *mut stack_st_GENERAL_SUBTREE,
+    excludedSubtrees: *mut stack_st_GENERAL_SUBTREE
+}
+
 pub enum X509_VERIFY_PARAM_ID {}
 pub enum PKCS12 {}
 
@@ -725,4 +745,9 @@ extern {
 
     pub fn SSLeay() -> c_ulong;
     pub fn SSLeay_version(key: c_int) -> *const c_char;
+
+    pub fn ASN1_BIT_STRING_get_bit(a: *mut ::ASN1_BIT_STRING, n: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_check(a: *mut ::ASN1_BIT_STRING, flags: *mut c_uchar, flags_len: c_int) -> c_int;
+    pub fn ASN1_BIT_STRING_num_asc(name: *mut c_char, tbl: *mut ::BIT_STRING_BITNAME) -> c_int;
+    pub fn ASN1_BIT_STRING_set_asc(bs: *mut ::ASN1_BIT_STRING, name: *mut c_char, value: c_int, tbl: *mut ::BIT_STRING_BITNAME) -> c_int;
 }

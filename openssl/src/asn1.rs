@@ -10,6 +10,7 @@ use bio::MemBio;
 use error::ErrorStack;
 use types::{OpenSslType, OpenSslTypeRef};
 use string::OpensslString;
+use nid::Nid;
 
 type_!(Asn1GeneralizedTime, Asn1GeneralizedTimeRef, ffi::ASN1_GENERALIZEDTIME, ffi::ASN1_GENERALIZEDTIME_free);
 
@@ -88,6 +89,118 @@ impl Asn1IntegerRef {
     {
         unsafe {
             cvt(::ffi::ASN1_INTEGER_set(self.as_ptr(), value as c_long)).map(|_| ())
+        }
+    }
+}
+
+type_!(Asn1Type, AsnTypeRef, ffi::ASN1_TYPE, ffi::ASN1_TYPE_free);
+
+type_!(Asn1Object, Asn1ObjectRef, ffi::ASN1_OBJECT, ffi::ASN1_OBJECT_free);
+
+impl Asn1Object {
+    fn new() -> Asn1Object
+    {
+        unsafe {
+            Asn1Object::from_ptr(::ffi::ASN1_OBJECT_new())
+        }
+    }
+
+    fn from_nid(nid: Nid) -> Result<Self,ErrorStack>
+    {
+        unsafe {
+            let handle = try!(cvt_p(::ffi::OBJ_nid2obj(nid.as_raw())));
+            Ok(Asn1Object::from_ptr(handle))
+        }
+    }
+}
+
+impl Asn1ObjectRef {
+
+    fn nid(&self) -> Option<Nid>
+    {
+        let nid = unsafe {
+            ::ffi::OBJ_obj2nid(self.as_ptr())
+        };
+        if nid == ::ffi::NID_undef {
+            None
+        } else {
+            Some(Nid::from_raw(nid))
+        }
+    }
+
+    pub fn text(&self) -> &str
+    {
+        unsafe {
+            let mut buf = Vec::<u8>::with_capacity(80);
+            let size = ::ffi::OBJ_obj2txt(buf.as_mut_ptr() as *mut i8, 80, self.as_ptr(), 0);
+            let cstr = ::std::ffi::CStr::from_ptr(buf.as_ptr() as *const i8);
+            cstr.to_str().unwrap()
+        }
+    }
+}
+
+impl Clone for Asn1Object {
+    fn clone(&self) -> Self
+    {
+        unsafe {
+            Asn1Object::from_ptr(::ffi::OBJ_dup(self.as_ptr()))
+        }
+    }
+}
+
+impl ::std::fmt::Display for Asn1ObjectRef {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result
+    {
+        fmt.write_str(self.text())
+    }
+}
+
+type_!(Asn1OctetString, Asn1OctetStringRef, ffi::ASN1_OCTET_STRING, ffi::ASN1_OCTET_STRING_free);
+
+impl Asn1OctetStringRef
+{
+
+}
+
+impl Clone for Asn1OctetString {
+    fn clone(&self) -> Self
+    {
+        unsafe {
+            Asn1OctetString::from_ptr(::ffi::ASN1_OCTET_STRING_dup(self.as_ptr()))
+        }
+    }
+}
+
+impl ::std::fmt::Display for Asn1OctetStringRef
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        unsafe {
+            let mem_bio = try!(MemBio::new());
+            try!(cvt(ffi::ASN1_STRING_print(mem_bio.as_ptr(), self.as_ptr() as *const ffi::ASN1_STRING)));
+            write!(f, "{}", str::from_utf8_unchecked(mem_bio.get_buf()))
+        }
+    }
+}
+
+impl super::stack::Stackable for Asn1Object
+{
+    type StackType = ffi::stack_st_ASN1_OBJECT;
+}
+
+type_!(Asn1BitString, Asn1BitStringRef, ffi::ASN1_BIT_STRING, ffi::ASN1_BIT_STRING_free);
+
+impl Asn1BitStringRef {
+    pub fn get_bit(self, n: i32) -> bool
+    {
+        unsafe {
+            ffi::ASN1_BIT_STRING_get_bit(self.as_ptr(), n) != 0
+        }
+    }
+
+    pub fn set_bit(self, n: i32, value: bool) -> Result<(), ErrorStack>
+    {
+        unsafe {
+            cvt(ffi::ASN1_BIT_STRING_set_bit(self.as_ptr(), n, if value { 1 } else {0})).map(|_| ())
         }
     }
 }

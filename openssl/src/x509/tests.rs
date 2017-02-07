@@ -225,3 +225,15 @@ fn ecdsa_cert() {
     ctx.set_private_key(&key).unwrap();
     ctx.check_private_key().unwrap();
 }
+
+#[test]
+fn req_loading() {
+    let csr = include_bytes!("../../test/csr.pem");
+    let csr = X509Req::from_pem(csr).ok().expect("Failed to load PEM");
+    let exts = csr.get_extensions();
+    for ext in exts {
+        let idata = ext.get_internal_data();
+        println!("Extension {}", ext.object());
+        println!("Data {}", ext.data());
+    }
+}
